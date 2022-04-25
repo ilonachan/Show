@@ -21,6 +21,7 @@
 
 #include "shader.h"
 #include "arghandler.h"
+#include "valstream.h"
 
 typedef struct {
 	Shader shader;
@@ -32,6 +33,7 @@ typedef struct {
 	int locResolution;
 	int locMouse;
 	int locTime;
+	ValBindingRef *valBindings;
 
 	/* create a new framebuffer */
 	unsigned int fbo;
@@ -180,6 +182,7 @@ void init_renderer(Renderer* r, int x, int y, int width, int height, char *shade
 	r->locResolution = shader_get_location(r->shader, "resolution");
 	r->locMouse = shader_get_location(r->shader, "mouse");
 	r->locTime = shader_get_location(r->shader, "time");
+	r->valBindings = valstream_bind_to_shader(r->shader);
 	shader_unbind();
 
 	/* create a new framebuffer */
@@ -319,6 +322,9 @@ void render(Renderer* r, float time) {
 			int new_shader = shader_compile(r->shader_path);
 			if (new_shader) {
 				r->shader = new_shader;
+				shader_bind(r->shader);
+				valstream_rebind_shader(r->shader, r->valBindings);
+				shader_unbind();
 			}
 		}
 	}
@@ -341,6 +347,8 @@ void render(Renderer* r, float time) {
 	shader_set_float(r->locTime, time);
 	shader_set_vec2(r->locResolution, r->width * options.quality, r->height * options.quality);
 	shader_set_vec2(r->locMouse, (float)root_x / r->width, 1.0 - (float)root_y / r->height);
+	valstream_update_values();
+	valstream_inject_into_shader(r->shader, r->valBindings);
 
 	/* render shader on framebuffer */
 	glPushMatrix();
@@ -457,6 +465,8 @@ int main(int argc, char **argv) {
 		print_help(arguments, argument_count);
 		return EXIT_FAILURE;
 	}
+
+	valstream_load_bindings();
 
 	init();
 
