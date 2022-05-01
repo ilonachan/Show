@@ -90,10 +90,12 @@ void valstream_update_values() {
     while(head != NULL) {
         union ValBindingValue value;
         switch (head->src->source) {
-        case VBS_COMMAND: // TODO: execute a command and return the result
+        case VBS_COMMAND:
             value = valstream_call(head->src->command, head->src->type);
             break;
         case VBS_FILE: // TODO: read latest value from a file stream
+            // these two operations are actually very much related, since the result of a command execution
+            // is also usually accessible through stdout.
             break;
         case VBS_DUMMY: // for testing purposes
             value = head->src->data;
